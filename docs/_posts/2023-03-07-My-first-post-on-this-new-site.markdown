@@ -353,3 +353,13 @@ We can finally add pass this device list to the `config spec` as part of the `cr
     config.files = files
 ```
 Having extended the config, the rest of the code is exactly as described in the [sample](https://github.com/vmware/pyvmomi-community-samples/blob/master/samples/create_vm.py). Our extended script for creating a 'blank' VM with NIC and SCSI devices attached to it is [here](https://github.com/redbilledpanda/VMWareHomeLab_Files/blob/ab946727daee34ef40c54596bcf5f71c17a46fad/create_VMs.py). 
+
+After running this script, here is my 'newVM' created on 'Datacenter':
+![image](https://user-images.githubusercontent.com/46345560/223646337-d092ad5c-ce2f-4d7f-9b63-1483db3833fb.png)
+
+Here we see that it has a NIC and a vDisk as we specified
+![image](https://user-images.githubusercontent.com/46345560/223646761-1f4bf1b6-de48-4a69-a87a-36e9dc64ca2f.png)
+
+So finally we have a (very basic) working setup for us to experiment with!
+
+
