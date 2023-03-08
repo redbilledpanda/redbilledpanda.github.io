@@ -1,3 +1,8 @@
+---
+layout: post
+title:  "My first post on this new site"
+date:   2023-03-07 18:19:48 +0530
+---
 # VMWare Home Lab Setup
 I have been reminiscing about some work I did while at VMWare. Since most software that this virtualization giant creates is targetted for fat cats running datacenters, it's way too expensive for folks like myself to purchase a one time license. Luckily, vmware 
 provides an evaluation license (for 60 days) using which we'll create the vmware vsphere based lab at home. Follow along:
