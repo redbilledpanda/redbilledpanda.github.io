@@ -216,7 +216,7 @@ This completes our initial basic setup
 ## Testing the setup
 
 ### Retrieving information from the vcenter server
-We'll test our setup with a small python script that [lists all VMs](https://github.com/redbilledpanda/VMWareHomeLab_Files/blob/ab946727daee34ef40c54596bcf5f71c17a46fad/listVMs.py) on the Vcenter Server Appliance (henceforth referred to as vcsa). (Install pyvmomi)[https://pypi.org/project/pyvmomi/], preferably in a virtualenv if you don't want to have it installed system-wide. 
+We'll test our setup with a small python script that [lists all VMs](https://github.com/redbilledpanda/VMWareHomeLab_Files/blob/main/listVMs.py) on the Vcenter Server Appliance (henceforth referred to as vcsa). [Install pyvmomi](https://pypi.org/project/pyvmomi/), preferably in a virtualenv if you don't want to have it installed system-wide.
 
 Once done, run the script like so: `python.exe .\listVMs.py ${vcsaHostIp} pyvmomi@vsphere.local ${SSO Password} 443`. It will print the name(s) of VMs and the datacenter(s). In my case here, I have just one VM, which is the vcsa VM and a single datacenter.
 
