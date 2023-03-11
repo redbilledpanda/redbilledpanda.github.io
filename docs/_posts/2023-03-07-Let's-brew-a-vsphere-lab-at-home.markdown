@@ -216,7 +216,7 @@ This completes our initial basic setup
 ## Testing the setup
 
 ### Retrieving information from the vcenter server
-We'll test our setup with a small python script that [lists all VMs](https://github.com/redbilledpanda/VMWareHomeLab/blob/WIP/listVMs.py) on the Vcenter Server Appliance (henceforth referred to as vcsa). (Install pyvmomi)[https://pypi.org/project/pyvmomi/], preferably in a virtualenv if you don't want to have it installed system-wide. 
+We'll test our setup with a small python script that [lists all VMs](https://github.com/redbilledpanda/VMWareHomeLab_Files/blob/main/listVMs.py) on the Vcenter Server Appliance (henceforth referred to as vcsa). [Install pyvmomi](https://pypi.org/project/pyvmomi/), preferably in a virtualenv if you don't want to have it installed system-wide.
 
 Once done, run the script like so: `python.exe .\listVMs.py ${vcsaHostIp} pyvmomi@vsphere.local ${SSO Password} 443`. It will print the name(s) of VMs and the datacenter(s). In my case here, I have just one VM, which is the vcsa VM and a single datacenter.
 
@@ -281,7 +281,7 @@ def create_config_spec(datastore_name, name, memory=4, guest="otherGuest",
     config.files = files
     return config
 ```
-As can be seen, the datastore name as well as the VM name are required parameters whereas other parameters have default values. Lets take a sneak peek at the `vim.vm.ConfigSpec` object provided by vmware. Here's [more](https://vdc-repo.vmware.com/vmwb-repository/dcr-public/c476b64b-c93c-4b21-9d76-be14da0148f9/04ca12ad-59b9-4e1c-8232-fd3d4276e52c/SDK/vsphere-ws/docs/ReferenceGuide/vim.vm.ConfigSpec.html) on that. As we can see from that, it has a bunch of properties, almost all of them optional (*btw isn't it weird vmware marks all optional properties with a* <span style="color:red">*</span> *??*). But what good is a VM without many of those properties anyways, which is why we add a bunch of properties here. This routine creates a VM with no network or storage controllers. We can extend this by adding a bunch of devices as part of the *deviceChange* property (which is of type [VirtualDeviceConfigSpec](https://vdc-repo.vmware.com/vmwb-repository/dcr-public/c476b64b-c93c-4b21-9d76-be14da0148f9/04ca12ad-59b9-4e1c-8232-fd3d4276e52c/SDK/vsphere-ws/docs/ReferenceGuide/vim.vm.device.VirtualDeviceSpec.html)). Let's add a NIC to it like so:
+As can be seen, the datastore name as well as the VM name are required parameters whereas other parameters have default values. Lets take a sneak peek at the `vim.vm.ConfigSpec` object provided by vmware. Here's [more](https://vdc-repo.vmware.com/vmwb-repository/dcr-public/c476b64b-c93c-4b21-9d76-be14da0148f9/04ca12ad-59b9-4e1c-8232-fd3d4276e52c/SDK/vsphere-ws/docs/ReferenceGuide/vim.vm.ConfigSpec.html) on that. As we can see from that, it has a bunch of properties, almost all of them optional (*btw isn't it weird vmware marks all optional properties with a \'\*\' ?*). But what good is a VM without many of those properties anyways, which is why we add a bunch of properties here. This routine creates a VM with no network or storage controllers. We can extend this by adding a bunch of devices as part of the *deviceChange* property (which is of type [VirtualDeviceConfigSpec](https://vdc-repo.vmware.com/vmwb-repository/dcr-public/c476b64b-c93c-4b21-9d76-be14da0148f9/04ca12ad-59b9-4e1c-8232-fd3d4276e52c/SDK/vsphere-ws/docs/ReferenceGuide/vim.vm.device.VirtualDeviceSpec.html)). Let's add a NIC to it like so:
 ```python
 vmControllers = []
 
