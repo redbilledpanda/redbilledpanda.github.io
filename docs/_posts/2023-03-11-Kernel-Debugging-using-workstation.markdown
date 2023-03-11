@@ -23,7 +23,7 @@ Make sure to not _yield the CPU_ on the client VM. Having setup the named pipe c
 
 Now let's fire up our VMs and check if these VMs are indeed connected via the serial port. I used the cu utility to check this. On the client, use cu to connect to cuau0 like so: `sudo cu -l /dev/cuau0 -s 9600` (_baud rate of 9600_). It will say "connected". Similarly on the server, connect to ttyu0 like so: `sudo cu -l /dev/ttyu0 -s 9600` which will again say "connected". Then type characters on either of them. They will appear on the other end. Note that they will NOT be echoed so you won't see them on the originating end. Make sure you do this with 'sudo' or else it won't be able to create a 'lock' file under /var/spool/lock without which it won't connect.
 
-Once having verified that they are indeed connected, we can prepare the kernel on the server (the debugged VM) to add debugging options to it. You may always refer to the handbook to understand the process of configuring and then compiling the kernel. Here are the various options related to debugging.
+Once having verified that they are indeed connected, we can prepare the kernel on the target (the debugged VM) to add debugging options to it. You may always refer to the handbook to understand the process of configuring and then compiling the kernel. Here are the various options related to debugging.
 
 So here's what my config file looks like:
 
