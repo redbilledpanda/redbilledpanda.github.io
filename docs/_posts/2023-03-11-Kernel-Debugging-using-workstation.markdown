@@ -66,7 +66,7 @@ make install DEBUG_FLAGS=-g3
 
 Or if you already have the exact same source on both the target VM as well as the dev VM, you could repeat the same steps on the dev VM as well. Now reboot the client VM.
 
-***Before you try to reboot make sure that the UART flags is "0x9" plus you need to set the baud rate to 9600 (default). You do it by changing '/boot/device.hints' (read more about it at uart(4)). You want your UART to be able to participate in remote kernel debugging. I typically set it to 0x10 | 0x80 i.e. hint.uart.0.flags="0x90" . This is a VERY IMPORTANT STEP. You won't be able to connect via client KGDB instance to the server GDB stub without this. After having done that, reboot the server.***
+***Before you try to reboot make sure that the UART flags is "0x9" plus you need to set the baud rate to 9600 (default). You do it by changing '/boot/device.hints' (read more about it at uart(4)). You want your UART to be able to participate in remote kernel debugging. I typically set it to 0x10 \| 0x80 i.e. hint.uart.0.flags="0x90" . This is a VERY IMPORTANT STEP. You won't be able to connect via client KGDB instance to the server GDB stub without this. After having done that, reboot the server.***
 
 If you want boot messages to be shown on the console, you also need to do:
 `echo 'console="comconsole"' >> /boot/loader.conf`
@@ -99,7 +99,7 @@ As we can see, execution stopped in the function `devstat_remove_entry` in `/usr
 #3  0x0000000000000000 in ?? ()
 ```
 
-As we can see we are still in the very early stages of booting. 'Early' here is a relative word, as we are already way pass the earlier three-staged bootloader. `locore.S` is actually the 'very first code' that gets executed from the kernel per-se. At line 79, it calls `hammer_time`, which is a machine dependent init code for the amd64 architecture. Many of this quirky stuff is very architecture (and board) dependent. One can dive could be understood later as they lean towards the more complicated side of things and are best explored after one has gotten his/her hands dirty!!
+As we can see we are still in the very early stages of booting. 'Early' here is a relative word, as we are already way past the earlier three-staged bootloader. `locore.S` is part of very early boot code that gets executed when the process starts. As you can see it's in assembly for very fine grained control. This is rather early in the boot process. If one is not interested in the machine and board level initialization details, then one can keep `continuing` until one sees routines from the architecture independent part of the codebase.
 
 So there we are folks! We've managed to get the setup ready!! You may now issue the GDB continue command (shorthand 'c') and the rest of the kernel can get initialized. Or you can keep stepping over with `s` and see the boot process in slo-mo. If you are uninterested in the boot flow (at the moment), then press `c`. Your target VM completes initializes and you see the classic login prompt black screen (assuming you haven't installed any window manager like Gnome or KDE). Let's check (on the server) which modules are loaded on the client. We need to put the target back into the debugged mode like so: `sudo sysctl debug.kdb.enter=1`. This will lock the target VM and return control to the gdb connection on the dev VM. At times, panicking the client will switch the debugger into DDB (rather than gdb). If that happens, issue the following command on the DDB prompt like so:
 ```
