@@ -8,7 +8,7 @@ I have been reminiscing about some work I did while at VMWare. Since most softwa
 provides an evaluation license (for 60 days) using which we'll create the vmware vsphere based lab at home. Follow along:
 
 ## PRE-REQUISITES:
-1. [ESX iso installer](https://customerconnect.vmware.com/downloads/details?productId=742&downloadGroup=ESXI670)
+1. [ESX iso installer](https://customerconnect.vmware.com/en/downloads/info/slug/datacenter_cloud_infrastructure/vmware_vsphere/8_0)
 2. [vSphere installer iso](https://customerconnect.vmware.com/en/evalcenter?p=vsphere-eval-8)
 3. A machine with atleast 32GB of RAM, 4 processors (~ total 8 cores), 500 GB of disk (preferably SSD)
       - even in the small configuration (Tiny), vSphere needs around 14 GB/2vCPUs and around 100G of disk space
