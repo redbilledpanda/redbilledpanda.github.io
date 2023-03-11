@@ -8,10 +8,21 @@ Hello.
 
 For our second post, let's talk about using VMWare workstation (on Windows 10) to enable kernel debugging. Specifically, FreeBSD kernel debugging. Since I cannot install fbsd natively, I resorted to using two VMs with VMware workstation. Let's call the VM hosting the debugger the server (also called the development or 'dev' VM), the one being debugged the client (also referred to as the 'target' VM).
 
-To that end, I added a named pipe as serial port on both the VMs, with one end on the server and the other one on the client. Depending on your host OS, the location of the pipe will differ. If like me you're on windows, the most typical location would be something like `\\.pipe\com_1`. 
-For the server:
+To that end, I added a named pipe as serial port on both the VMs, with one end on the server and the other one on the client. Depending on your host OS, the location of the pipe will differ. If like me you're on windows, the most typical location would be something like `\\.pipe\com_1`.
 
-For the client:
+On the server VM, configure the pipe like so:
+| ![Server Pipe Config](https://user-images.githubusercontent.com/46345560/224480699-4d49533d-413c-4b94-af9d-d07632e439d2.png) | 
+|:--:| 
+| *Server Pipe Config* |
+<br/>
+
+<br/>
+
+On the client VM, configure the pipe like so:
+| ![Client Pipe Config](https://user-images.githubusercontent.com/46345560/224480731-a47561a0-7a84-4e62-9571-950334fa34c5.png) | 
+|:--:| 
+| *Client Pipe Config* |
+
 
 Make sure to not "yield the CPU" on the client. After having done that, we need to make sure that our VMs can actually "talk to each other".  Now fbsd, unlike Linux, has two serial interfaces for each physical serial port, a "dial-out" interface and a "dial-in" interface. Assuming that the kernel maps the very first serial line to our named pipe, the dial-out device is /dev/cuau0 and the dial-in device is the familiar /dev/ttyu0.
 
@@ -50,7 +61,7 @@ So
 cd /usr/obj/usr/src/sys/AIJAZ-DEBUG/
 sudo make gdbinit
 ```
-One can now copy the kernel (called kernel.debug) as the symbol file (called kernel.symbols) over to the client or the development VM, but if one is intending to debug KLD modules as well, preferable to copy the entire directory over to the dev VM. Also while building the kernel module, remember to pass the debug flag while compiling and installing:
+One can now copy the kernel (called `kernel.debug`) and the symbol file (called `kernel.symbols`) over to the development VM, but if one is intending to debug KLD modules as well, preferable to copy the entire directory over to the dev VM. Also while building the kernel module, remember to pass the debug flag while compiling and installing:
 
 Thusly,
 ```
@@ -66,19 +77,25 @@ If you want boot messages to be shown on the console, you also need to do:
 `echo 'console="comconsole"' >> /boot/loader.conf`
 
 Remember, due to the serial nature of the console, boot messages might end up being garbled by the time the console shows it, so you can change the baud rate accordingly. Now you are ready to reboot your server VM. After rebooting,you will see the menu like so:
+![image](https://user-images.githubusercontent.com/46345560/224480799-cc7fcd7c-5afc-40ce-b850-9349757e70d9.png)
 
 If we wish to debug the client boot up process, we need 
 Press 3 to see the loader prompt. At the loader prompt, type `boot -d`. If all goes well, you should see this:
+| ![Boot Debugging](https://user-images.githubusercontent.com/46345560/224481085-b4f605f6-cd4c-4429-b4b2-09fe19f28bc9.png) | 
+|:--:| 
+| *Boot Debugging* |
 
-If GDB debug ports says NULL or not connected, it is mostly because one may have forgotten to change the UART flags, which as we showed above, should be 0x8 or above. Assuming we are all set, go to the client machine and browse to the directory which has the debug version of the kernel (kernel.debug). Attach KGDB to this image (remember to be root) like so:
+<br/>
+<br/>
 
-`sudo kgdb kernel.debug` followed by setting the baud rate like so `set remotebaud 9600`.
+This is the [DDB](https://docs.freebsd.org/en/books/developers-handbook/kerneldebug/#kerneldebug-online-ddb) prompt, an online kernel debugger with limited capabilities. At this time, If `GDB debug ports` says `NULL` or `not connected`, it is mostly because one may have forgotten to change the UART flags, which as we showed above, should be 0x8 or above. 
+
+Assuming we are fine until this point, go to the client machine and browse to the directory which has the debug version of the kernel (`kernel.debug`). Attach KGDB to this image (remember to be root) like so: `sudo kgdb kernel.debug` followed by setting the baud rate like so `set remotebaud 9600`.
 
 After that, go back to the debug prompt on the server and type gdb, The stub is now listening for the remote end to be connected. 
 
-Now go back to the client and type `target remote /dev/cuau0`
-
-Now these VMs are finally connected via the named pipe. On the client end, you can see the portion where the server VM is blocked. In my case, this is what I see:
+Now go back to the client and type `target remote /dev/cuau0`. Finally these VMs are  connected via the named pipe. On the client end, you can see the portion where the server VM is blocked. In my case, this is what I see:
+![image](https://user-images.githubusercontent.com/46345560/224481308-ba456bcb-cc9e-4194-9106-4c6d56f17f12.png)
 
 As we can see, execution stopped in the function `devstat_remove_entry` in `/usr/src/sys/kern/subr_devstat.c:205`. The '205' at the end shows the line number. The GDB 'bt' command gives us the backtrace, which in my case is:
 
