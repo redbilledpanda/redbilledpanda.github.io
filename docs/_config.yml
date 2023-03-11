@@ -23,7 +23,7 @@ title: My meandering thoughts
 description: >- # this means to ignore newlines until "baseurl:"
   Safekeeping my thoughts as they come, one post at a time
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://meanderingthoughts.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+url: "redbilledpanda.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  redbilledpanda
 
 # Build settings
