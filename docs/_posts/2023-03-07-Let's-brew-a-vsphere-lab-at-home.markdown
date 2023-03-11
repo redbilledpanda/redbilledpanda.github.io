@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "My first post on this new site"
+title:  "Let's brew a vsphere lab at home"
 date:   2023-03-07 18:19:48 +0530
 ---
 # VMWare Home Lab Setup
