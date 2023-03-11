@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Kernel Debugging using WorkStation"
-date:   2023-03-06 16:42:48 +0530
+date:   2023-03-11 16:42:48 +0530
 categories: kernel, debugging, FreeBSD
 ---
 Hello.
@@ -10,21 +10,16 @@ For our second post, let's talk about using VMWare workstation (on Windows 10) t
 
 To that end, I added a named pipe as serial port on both the VMs, with one end on the server and the other one on the client. Depending on your host OS, the location of the pipe will differ. If like me you're on windows, the most typical location would be something like `\\.pipe\com_1`.
 
-On the server VM, configure the pipe like so:
+On the server VM, configure the pipe like so.
+<br/>
 | ![Server Pipe Config](https://user-images.githubusercontent.com/46345560/224480699-4d49533d-413c-4b94-af9d-d07632e439d2.png) | 
-|:--:| 
-| *Server Pipe Config* |
 <br/>
-
 <br/>
-
 On the client VM, configure the pipe like so:
+<br/>
 | ![Client Pipe Config](https://user-images.githubusercontent.com/46345560/224480731-a47561a0-7a84-4e62-9571-950334fa34c5.png) | 
-|:--:| 
-| *Client Pipe Config* |
 
-
-Make sure to not "yield the CPU" on the client. After having done that, we need to make sure that our VMs can actually "talk to each other".  Now fbsd, unlike Linux, has two serial interfaces for each physical serial port, a "dial-out" interface and a "dial-in" interface. Assuming that the kernel maps the very first serial line to our named pipe, the dial-out device is /dev/cuau0 and the dial-in device is the familiar /dev/ttyu0.
+Make sure to not _yield the CPU_ on the client VM. Having setup the named pipe connection between these VMs, we need to make sure that they are _actually_  connected with this named pipe. To test that, we use serial interface programs on these VMs to send each other small messages. Now fbsd, unlike Linux, has two serial interfaces for each physical serial port, a "dial-out" interface and a "dial-in" interface. Assuming that the kernel maps the very first serial line to our named pipe, the dial-out device is /dev/cuau0 and the dial-in device is the familiar /dev/ttyu0.
 
 Now let's fire up our VMs and check if these VMs are indeed connected via the serial port. I used the cu utility to check this. On the client, use cu to connect to cuau0 like so: `sudo cu -l /dev/cuau0 -s 9600` (_baud rate of 9600_). It will say "connected". Similarly on the server, connect to ttyu0 like so: `sudo cu -l /dev/ttyu0 -s 9600` which will again say "connected". Then type characters on either of them. They will appear on the other end. Note that they will NOT be echoed so you won't see them on the originating end. Make sure you do this with 'sudo' or else it won't be able to create a 'lock' file under /var/spool/lock without which it won't connect.
 
@@ -81,11 +76,8 @@ Remember, due to the serial nature of the console, boot messages might end up be
 
 If we wish to debug the client boot up process, we need 
 Press 3 to see the loader prompt. At the loader prompt, type `boot -d`. If all goes well, you should see this:
-| ![Boot Debugging](https://user-images.githubusercontent.com/46345560/224481085-b4f605f6-cd4c-4429-b4b2-09fe19f28bc9.png) | 
-|:--:| 
-| *Boot Debugging* |
-
 <br/>
+| ![Boot Debugging](https://user-images.githubusercontent.com/46345560/224481085-b4f605f6-cd4c-4429-b4b2-09fe19f28bc9.png) | 
 <br/>
 
 This is the [DDB](https://docs.freebsd.org/en/books/developers-handbook/kerneldebug/#kerneldebug-online-ddb) prompt, an online kernel debugger with limited capabilities. At this time, If `GDB debug ports` says `NULL` or `not connected`, it is mostly because one may have forgotten to change the UART flags, which as we showed above, should be 0x8 or above. 
