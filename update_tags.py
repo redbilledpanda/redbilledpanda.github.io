@@ -78,7 +78,6 @@ def get_tags(post_dir=post_dir, verbose=True):
     for path in itertools.chain(PathList, PathList1):
         if path.is_file():
             if '~' in path.suffix:
-                pdb.set_trace()
                 continue
             with open(path.absolute(), 'r', encoding='utf8') as f:
                 crawl = False
@@ -182,7 +181,6 @@ if __name__ == '__main__':
         print(e)
         sys.exit(1)        
 
-    pdb.set_trace()
     tags = get_tags(os.getcwd())
     create_tags_posts(tag_dir, tags)
 
