@@ -182,6 +182,13 @@ if __name__ == '__main__':
         sys.exit(1)        
 
     tags = get_tags(os.getcwd())
+
+    for (root, dirList, _) in os.walk(os.getcwd()):
+        for dir in dirList:
+            if '_posts' in dir:
+                tag_dir = os.path.join(root, tag_dir)
+                break
+
     create_tags_posts(tag_dir, tags)
 
     # For Git.
