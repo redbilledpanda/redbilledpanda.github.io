@@ -21,19 +21,16 @@ arturomoncadatorres@gmail.com
 import glob
 import os
 
-import git
-import pdb
 import pathlib
 import itertools
 import sys
 
 #%% Define paths.
-post_dir = '_posts/'
 tag_dir = 'tag/'
 
 
 #%%
-def get_tags(post_dir=post_dir, verbose=True):
+def get_tags(verbose=True):
     '''
     Adapted from tag_generator.py
     Copyright 2017 Long Qian
@@ -173,15 +170,7 @@ def create_tags_posts(tag_dir=tag_dir, total_tags=set(), verbose=True):
 
 #%%
 if __name__ == '__main__':
-    try:
-        commitMsg = sys.argv[1]
-        commitEmail = sys.argv[2]        
-    except IndexError as e:
-        print(f"usage:\n{sys.argv[0]} commitMsg(enclosed in quotes) commitEmail ")
-        print(e)
-        sys.exit(1)        
-
-    tags = get_tags(os.getcwd())
+    tags = get_tags()
 
     for (root, dirList, _) in os.walk(os.getcwd()):
         for dir in dirList:
@@ -190,27 +179,3 @@ if __name__ == '__main__':
                 break
 
     create_tags_posts(tag_dir, tags)
-
-    # For Git.
-    repo = git.Repo(os.getcwd())
-
-    # Add files for commit.
-    try:
-        repo.git.add(tag_dir)
-    except:
-        print("Error ocurred while adding files to Git.")
-
-    # Commit changes.    
-    try:
-        repo.git.commit('-m', str(commitMsg), author=commitEmail)
-    except Exception as e:
-        print("Error occurred while commiting.")
-        print(e)
-    
-    # Push commit.
-    try:
-        origin = repo.remote(name='origin')
-        origin.push()
-    except Exception as e:
-        print("Error occurred while pushing.")
-        print(e)
