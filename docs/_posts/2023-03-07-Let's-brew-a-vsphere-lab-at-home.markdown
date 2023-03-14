@@ -2,6 +2,12 @@
 layout: post
 title:  "Let's brew a vsphere lab at home"
 date:   2023-03-07 18:19:48 +0530
+tags:
+   - VMWare
+   - vsphere
+   - virtualization
+   - vcenter
+   - pyvmomi
 ---
 # VMWare Home Lab Setup
 I have been reminiscing about some work I did while at VMWare. Since most software that this virtualization giant creates is targetted for fat cats running datacenters, it's way too expensive for folks like myself to purchase a one time license. Luckily, vmware 
