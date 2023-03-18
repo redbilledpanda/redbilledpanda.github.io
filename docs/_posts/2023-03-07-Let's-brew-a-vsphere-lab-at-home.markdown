@@ -343,7 +343,7 @@ Finally, let's attach a [vDisk](https://vdc-repo.vmware.com/vmwb-repository/dcr-
     disk_spec.device.controllerKey = controller.key
     vmControllers.append(disk_spec)
 ```
-We can finally add pass this device list to the `config spec` as part of the `create_config_spec` function so the snippet loks like so:
+We can finally pass this device list to the `config spec` as part of the `create_config_spec` function so the snippet loks like so:
 ```python
     config = vim.vm.ConfigSpec()
     config.annotation = annotation
