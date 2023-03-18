@@ -1,6 +1,6 @@
 ---
 layout: tag_page
-title: "Tag: debugging"
-tag: debugging
+title: "Tag: vSphere"
+tag: vSphere
 robots: noindex
 ---

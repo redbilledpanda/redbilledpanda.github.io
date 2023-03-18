@@ -4,8 +4,8 @@ title:  "Let's brew a vsphere lab at home"
 date:   2023-03-07 18:19:48 +0530
 tags:
    - VMWare
-   - vsphere
-   - virtualization
+   - vSphere
+   - Virtualization
    - vcenter
    - pyvmomi
 ---

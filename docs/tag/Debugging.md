@@ -1,6 +1,6 @@
 ---
 layout: tag_page
-title: "Tag: kernel"
-tag: kernel
+title: "Tag: Debugging"
+tag: Debugging
 robots: noindex
 ---
