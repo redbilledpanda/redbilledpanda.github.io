@@ -5,6 +5,7 @@ date:   2023-03-19 14:42:48 +0530
 tags: 
    - Kernel
    - Modules
+   - Compilation
    - Linux
 ---
 Hello.
@@ -95,13 +96,13 @@ Let's grep for 'helloworld' on /proc/kallsyms. No mention of the __init function
 0000000000000000 d __this_module        [helloworld]
 0000000000000000 t cleanup_module       [helloworld]
 ```
-It gets [removed](https://stackoverflow.com/questions/63689045/init-function-not-present-in-kallsyms) once the module gets loaded. However, I am still able to call this function from within the `__exit` routine through a wrapper which seems strange to me since there seems to be no matching symbol for it as can be seen from above. Perhaps the relevant memory (more like cache lines) have not yet been invalidated so it's possible that I'm just getting lucky here? Let's drop them caches after the `__init` routine gets called and see if that causes a kernel panic.
+It gets [removed](https://stackoverflow.com/questions/63689045/init-function-not-present-in-kallsyms) once the module gets loaded. However, I am still able to call this function from within the `__exit` routine through a wrapper which seems strange to me. Although we don't see a matching symbol for `helloworld_init` in the list above, it is not unlikely that the relevant memory (more like cache lines) have not yet been invalidated. So it's possible that I'm just getting lucky here. To ascertain, let's drop them caches after the `__init` routine gets called and see if that causes a kernel panic (since the linked address or the offset should point to a section of memory that it shouldn't touch).
 ```
 Mar 19 18:01:33 aijazVM kernel: [24795.884795] "Hello world initialization!"
 Mar 19 18:02:01 aijazVM kernel: [24823.169160] echo (15514): drop_caches: 3
 Mar 19 18:02:12 aijazVM kernel: [24834.528229] "Hello world exit, let's try calling init here"
 Mar 19 18:02:12 aijazVM kernel: [24834.528232] "Hello world initialization!"
 ```
-Perhaps the drop cache mechanism merely causes low level cache lines inside the kernel to get flushed and invalidated but does nothing to the architecure specific caches (think L1/L2/L3 caches) which is why we see what we see above. The only way to be sure would be to tell the underlying CPU to zero the cache lines that have been marked as invalid. But that's an investigation for another post (and day). We've [asked](https://stackoverflow.com/questions/75782076/init-and-exit-attributes-for-loadable-kernel-modules) help from the world wide web and hope to get some pointers.
+As we see above, everything seems A-ok. Perhaps the drop cache mechanism merely causes low level cache lines inside the kernel to get flushed and invalidated but does nothing to the architecure specific caches (think L1/L2/L3 caches) which is why we see what we see above. The only way to be sure would be to tell the underlying CPU to zero the cache lines that have been marked as invalid. But that's an investigation for another post (and day). We've [asked](https://stackoverflow.com/questions/75782076/init-and-exit-attributes-for-loadable-kernel-modules) help from the world wide web and hope to get some pointers.
 
 As for exit, built in modules won't be unloaded so it's safe to have those functions removed. This concludes our (very) brief rejoinder on building Kernel modules. Until next time, adios!
