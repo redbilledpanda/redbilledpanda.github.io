@@ -59,8 +59,8 @@ Here's a sneak peek into it:
 #define CONFIG_ARCH_HAS_SET_MEMORY 1
 #define CONFIG_SECURITY_TOMOYO_MAX_AUDIT_LOG 102
 ```
-
 Let's write a very simple module and as convention stands, let's call it helloworld. So here's how it looks:
+
 ```c
 #include <linux/module.h>
 #include <linux/init.h>
@@ -86,9 +86,10 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("AjB");
 MODULE_DESCRIPTION("LKM skeleton");
 ```
-Macros `module_init` and `module_exit` mark the corresponding functions as entry and exit functions respectively. These get executed only once when the driver registers (for a real/virtual device) regardless of whether any device has been enumerated yet or not. These merely place the init and exit code in some pre-defined sections of the kernel image. Remember the kernel image is just another [ELF](https://en.wikipedia.org/wiki/Vmlinux) binary albiet with some additional sections defined compared to your 'regular' *nix binary). It is important to remember that we're talking about built-in modules here. Once these modules have been loaded, the kernel [frees](https://lxr.missinglinkelectronics.com/linux/init/main.c#L1492) all such memory regions marked as`__init` since they'd never be called again until next reboot.
 
-Let's grep for 'helloworld' on /proc/kallsyms. No mention of the __init function here:
+Macros `module_init` and `module_exit` mark the corresponding functions as entry and exit functions respectively. These get executed only once when the driver registers (for a real/virtual device) regardless of whether any device has been enumerated yet or not. These merely place the init and exit code in some pre-defined sections of the kernel image. Remember the kernel image is just another [ELF](https://en.wikipedia.org/wiki/Vmlinux) binary albiet with some additional sections defined compared to your 'regular' *nix binary. It is important to remember that we're talking about built-in modules here. Once these modules have been loaded, the kernel [frees](https://lxr.missinglinkelectronics.com/linux/init/main.c#L1492) all such memory regions marked as`__init` since they'd never be called again until next reboot.
+
+Let's grep for 'helloworld_init' on `/proc/kallsyms`. No mention of the it here:
 
 ```
 0000000000000000 r _note_7      [helloworld]
@@ -96,85 +97,87 @@ Let's grep for 'helloworld' on /proc/kallsyms. No mention of the __init function
 0000000000000000 d __this_module        [helloworld]
 0000000000000000 t cleanup_module       [helloworld]
 ```
-    It gets [removed](https://stackoverflow.com/questions/63689045/init-function-not-present-in-kallsyms) once the module gets loaded. However, I am still able to call this function from within the `__exit` routine through a wrapper which seems strange to me. Although we don't see a matching symbol for `helloworld_init` in the list above, it is not unlikely that the relevant memory (more like cache lines) have not yet been invalidated. So it's possible that I'm just getting lucky here. To ascertain, let's drop them caches after the `__init` routine gets called and see if that causes a kernel panic (since the linked address or the offset should point to a section of memory that it shouldn't touch).
-    ```
-    Mar 19 18:01:33 aijazVM kernel: [24795.884795] "Hello world initialization!"
-    Mar 19 18:02:01 aijazVM kernel: [24823.169160] echo (15514): drop_caches: 3
-    Mar 19 18:02:12 aijazVM kernel: [24834.528229] "Hello world exit, let's try calling init here"
-    Mar 19 18:02:12 aijazVM kernel: [24834.528232] "Hello world initialization!"
-    ```
+   It gets [removed](https://stackoverflow.com/questions/63689045/init-function-not-present-in-kallsyms) once the module gets loaded. However, I am still able to call this function from within the `__exit` routine through a wrapper which seems strange to me. Although we don't see a matching symbol for `helloworld_init` in the list above, it is not unlikely that the relevant memory (more like cache lines) have not yet been invalidated. So it's possible that I'm just getting lucky here. To ascertain, let's drop them caches after the `__init` routine gets called and see if that causes a kernel panic (since the linked address or the offset should point to a section of memory that it shouldn't touch).
 
-    This is rather perplexing to see why this would be the case. After a bit of help from the world wide web, it is likely that my (tiny) init function is getting inlined by the compiler which is why it never mattered to the wrapper function. Let's disassemble the binary and check what see:
-    ```
-    static void __exit helloworld_exit(void) {
-       0:	55                   	push   %rbp
-        printk("\"Hello world exit, let's try calling init here\"\n");
-       1:	48 c7 c7 00 00 00 00 	mov    $0x0,%rdi
-    static void __exit helloworld_exit(void) {
-       8:	48 89 e5             	mov    %rsp,%rbp
-        printk("\"Hello world exit, let's try calling init here\"\n");
-       b:	e8 00 00 00 00       	call   10 <cleanup_module+0x10>
-        printk("\"Hello world initialization!\"\n");
-      10:	48 c7 c7 00 00 00 00 	mov    $0x0,%rdi
-      17:	e8 00 00 00 00       	call   1c <cleanup_module+0x1c>
-        init_wrapper();
-    }    
-    ```
-   I'm only concerned with the disassenbly for the `__exit` function to check if our `init_wrapper` got inlined. As we can see from the above snippet, it indeed looks like the compiler inlined our `__init` function. Let's modify our source so it looks like this:
+ ```
+ Mar 19 18:01:33 aijazVM kernel: [24795.884795] "Hello world initialization!"
+ Mar 19 18:02:01 aijazVM kernel: [24823.169160] echo (15514): drop_caches: 3
+ Mar 19 18:02:12 aijazVM kernel: [24834.528229] "Hello world exit, let's try calling init here"
+ Mar 19 18:02:12 aijazVM kernel: [24834.528232] "Hello world initialization!"
+ ```
+   This is rather perplexing to see why this would be the case. After a bit of help from the world wide web, it became clear that my (tiny) init function is getting inlined by the compiler. Let's disassemble (`objdump -S`) the binary and check out how the compiler decided to call the wrapper as part of the exit function:
 
-   ```C
-   #include <linux/module.h>
-   #include <linux/init.h>
+ ```assembler
+ static void __exit helloworld_exit(void) {
+    0:	55                   	push   %rbp
+     printk("\"Hello world exit, let's try calling init here\"\n");
+    1:	48 c7 c7 00 00 00 00 	mov    $0x0,%rdi
+ static void __exit helloworld_exit(void) {
+    8:	48 89 e5             	mov    %rsp,%rbp
+     printk("\"Hello world exit, let's try calling init here\"\n");
+    b:	e8 00 00 00 00       	call   10 <cleanup_module+0x10>
+     printk("\"Hello world initialization!\"\n");
+   10:	48 c7 c7 00 00 00 00 	mov    $0x0,%rdi
+   17:	e8 00 00 00 00       	call   1c <cleanup_module+0x1c>
+     init_wrapper();
+ }    
+ ```
+   As we can see from the above snippet, it indeed looks like the compiler inlined the wrapper as well as  `__init` function. Let's modify our source so it looks like this:
 
-   #ifdef NOINLINE
-    static int  __init __attribute__ ((__noinline__)) helloworld_init(void)  {
-   #else
-    static int  __init helloworld_init(void)  {
-   #endif
-        // printk is the kernel's version of printf
-        // and is completely defined and implemented
-        // as part of the kernel, since it has no glibc 
-        // the ubiquitous C library available to all and one
-        printk("\"Hello world initialization!\"\n");
-        return 0;
+```c
+#include <linux/module.h>
+#include <linux/init.h>
 
-    }
+#ifdef NOINLINE
+ static int  __init __attribute__ ((__noinline__)) helloworld_init(void)  {
+#else
+ static int  __init helloworld_init(void)  {
+#endif
+     // printk is the kernel's version of printf
+     // and is completely defined and implemented
+     // as part of the kernel, since it has no glibc 
+     // the ubiquitous C library available to all and one
+     printk("\"Hello world initialization!\"\n");
+     return 0;
 
-    static int init_wrapper(void) {
-       // calling our init function here
-       return helloworld_init();
-    }
+ }
 
-    static void __exit helloworld_exit(void) {
-        printk("\"Hello world exit, let's try calling init here\"\n");
-        init_wrapper();
-    }
+ static int init_wrapper(void) {
+    // calling our init function here
+    return helloworld_init();
+ }
 
-    module_init(helloworld_init);
-    module_exit(helloworld_exit);
-    MODULE_LICENSE("GPL");
-    MODULE_AUTHOR("Aijaz Baig");
+ static void __exit helloworld_exit(void) {
+     printk("\"Hello world exit, let's try calling init here\"\n");
+     init_wrapper();
+ }
 
-    MODULE_DESCRIPTION("LKM skeleton");
-   ```
-   We can conditionally compile the code through the use of a pre-processor like so `make ccflags-y="-DNOINLINE"`. So we do just that and analyze the exit secion again. Here's the snippet below:
-   ```asm
-    static void __exit helloworld_exit(void) {
-       0:	55                   	push   %rbp
-        printk("\"Hello world exit, let's try calling init here\"\n");
-       1:	48 c7 c7 00 00 00 00 	mov    $0x0,%rdi
-    static void __exit helloworld_exit(void) {
-       8:	48 89 e5             	mov    %rsp,%rbp
-        printk("\"Hello world exit, let's try calling init here\"\n");
-       b:	e8 00 00 00 00       	call   10 <cleanup_module+0x10>
-       return helloworld_init();
-      10:	e8 00 00 00 00       	call   15 <cleanup_module+0x15>
-        init_wrapper();
-    }   
-   ```
-   This time we see that although `init_wrapper` got inlined, our `__init` function was not inlined. Now that we know that inlining was causing our module removal to work, let's try to insert and then remove our module. This time, it should trigger a kernel panic.
+ module_init(helloworld_init);
+ module_exit(helloworld_exit);
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Aijaz Baig");
 
-   Let's tail on the kernel log:
+ MODULE_DESCRIPTION("LKM skeleton");
+```
+We can conditionally compile the code through the use of a pre-processor like so `make ccflags-y="-DNOINLINE"`. So we do just that and analyze the exit secion again. Here's the snippet below:
+
+```asm
+static void __exit helloworld_exit(void) {
+   0:	55                   	push   %rbp
+    printk("\"Hello world exit, let's try calling init here\"\n");
+   1:	48 c7 c7 00 00 00 00 	mov    $0x0,%rdi
+static void __exit helloworld_exit(void) {
+   8:	48 89 e5             	mov    %rsp,%rbp
+    printk("\"Hello world exit, let's try calling init here\"\n");
+   b:	e8 00 00 00 00       	call   10 <cleanup_module+0x10>
+   return helloworld_init();
+  10:	e8 00 00 00 00       	call   15 <cleanup_module+0x15>
+    init_wrapper();
+}   
+```
+
+   This time we see that although `init_wrapper` got inlined, our `__init` function was not. Now that we know that inlining was causing our module removal to work, let's try to insert and then remove our module. This time, it should trigger a kernel panic. Let's tail on the kernel log:
+
    ```
    Mar 19 11:50:23 KernelVM kernel: [ 7352.434168] helloworld: loading out-of-tree module taints kernel.
     Mar 19 11:50:23 KernelVM kernel: [ 7352.434207] helloworld: module verification failed: signature and/or required key missing - tainting kernel
