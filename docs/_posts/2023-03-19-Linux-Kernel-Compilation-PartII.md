@@ -87,7 +87,9 @@ MODULE_AUTHOR("AjB");
 MODULE_DESCRIPTION("LKM skeleton");
 ```
 
-Macros `module_init` and `module_exit` mark the corresponding functions as entry and exit functions respectively. These get executed only once when the driver registers (for a real/virtual device) regardless of whether any device has been enumerated yet or not. These merely place the init and exit code in some pre-defined sections of the kernel image. Remember the kernel image is just another [ELF](https://en.wikipedia.org/wiki/Vmlinux) binary albiet with some additional sections defined compared to your 'regular' *nix binary. It is important to remember that we're talking about built-in modules here. Once these modules have been loaded, the kernel [frees](https://lxr.missinglinkelectronics.com/linux/init/main.c#L1492) all such memory regions marked as`__init` since they'd never be called again until next reboot.
+Macros `module_init` and `module_exit` mark the corresponding functions as entry and exit functions respectively. These get executed only once when the driver registers (for a real/virtual device) regardless of whether any device has been enumerated yet or not. These merely place the init and exit code in some pre-defined sections of the kernel image. Remember the kernel image is just another [ELF](https://en.wikipedia.org/wiki/Vmlinux) binary albiet with some additional sections defined compared to your 'regular' *nix binary. 
+
+As far as built-in modules are concerned, these `__init` routines are of no use once the module has been loaded. Once loaded, the kernel [frees](https://lxr.missinglinkelectronics.com/linux/init/main.c#L1492) all such memory regions marked as`__init` since they'd never be called again until next reboot. As for those marked as `__exit`, such routines are also discarded if we have not explicitly [enabled](https://cateee.net/lkddb/web-lkddb/MODULE_UNLOAD.html) module unload while compiling the kernel.
 
 Let's grep for 'helloworld_init' on `/proc/kallsyms`. No mention of the it here:
 
