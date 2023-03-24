@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Kernel Debugging using WorkStation"
+title:  "FreeBSD Kernel Debugging using WorkStation"
 date:   2023-03-11 16:42:48 +0530
 tags: 
    - Kernel
