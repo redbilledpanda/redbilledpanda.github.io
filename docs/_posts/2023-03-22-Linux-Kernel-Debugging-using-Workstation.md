@@ -10,7 +10,7 @@ tags:
 
 Hello there fellas!
 
-Let's [continue](https://redbilledpanda.github.io/2023/03/19/Linux-Kernel-Compilation-PartII.html) our (mis)adventure(:smiley:) with the Linux kernel. We ran into an OOPs but due to lack of time (and inclination :grin:), we had to relegate the task. Well, this time around, we'll try to get it fixed or at least have our debugging setup fixed.
+Let's [continue](https://redbilledpanda.github.io/2023/03/19/Linux-Kernel-Compilation-PartII.html) our (mis)adventure(:smiley:) with the Linux kernel. We ran into an OOPs but due to lack of time (and inclination :grin:), we had to delay the task. Well, this time around, we'll try to get it addressed or at least have our debugging setup fixed.
 
 Our Linux Kernel debugging setup consists of two virtual machines, quite similar to our [FreeBSD kernel debugging](https://redbilledpanda.github.io/2023/03/11/Kernel-Debugging-using-workstation.html). One of them would drive the debug process, we'll call that VM as the debugger VM, also called the Master. It's peer VM will host the kernel that would be debugged; we'll call that the debugee or the slave VM. We'll have them connected using a windows named pipe, similar to what we did with our FreeBSD setup. Refer to that post for pictures explaining this.
 
@@ -22,7 +22,7 @@ sudo dmesg | grep -i tty
 ```
 Most likely it would be `/dev/ttyS0`. Check on the slave and most likely you'll find that it's the same node. Then establish a connection between the VMs using the `cu` utility like so: `cu -l $your-serial-device-node -s 115200`. Run this on both the VMs. Type something on the master and you should see it on the slave and vice versa. There's no echo by default so make sure your test strings are different. Having confirmed the connection issue a `~.` on both the ends to disconnect. Finally our VMs are connected!
 
-We now turn our attention on the slave VM. We'll need to make sure the kernel is properly configured to supported debugging over a serial console. It's important to pause here and think about the setup. Since we are debugging the kernel, we'll need another machine to debug it. A surgeon cannot perform surgery on himself and needs another one to operate on him. So does the kernel (:lol:). On the slave VM, we need to set the following kernel config options:
+We now turn our attention on the slave VM. We'll need to make sure the kernel is properly configured to supported debugging over a serial console. It's important to pause here and think about the setup. Since we are debugging the kernel, we'll need another machine to debug it. A surgeon cannot perform surgery on himself and needs another one to operate on him. So does the kernel (:slightly_smiling_face:). On the slave VM, we need to set the following kernel config options:
 
 ```
 CONFIG_FRAME_POINTER=Y
