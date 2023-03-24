@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Linux-Kernel-Debugging-using-Workstation"
+title:  "Linux Kernel Debugging using Workstation"
 date:   2023-03-22 10:30:48 +0530
 tags:
    - Debugging
