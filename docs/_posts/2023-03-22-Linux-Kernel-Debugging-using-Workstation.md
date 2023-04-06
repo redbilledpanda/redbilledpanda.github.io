@@ -39,7 +39,7 @@ If your current kernel has the `CONFIG_IKCONFIG` and `CONFIG_IKCONFIG_PROC` conf
 
 In my case, the only config option that was ***not*** set was `CONFIG_PANIC_ON_OOPS` and luckily, this can be passed on the kernel command line like so `oops=panic`. In addition, one needs to append the following to the kernel command line: `console=tty0 kgdboc=ttyS0,115200 nokaslr`. We need to disable [KASLR](https://www.ibm.com/docs/en/linux-on-systems?topic=shutdown-kaslr) to allow gdb to properly translate addressesses into symbols. One crude way to modify the kernel command line precisely for a given GRUB menu entry is to directly modify the `/boot/grub/grub.cfg` file. Locate the corresponding menuentry here and make modifications as you need. I prefer it to the rather convoluted (IMHO) way of creating custom grub2 entries (which somehow never work for me anyways). So after modifying the menu-entry, we restart the client VM.
 
-On the server VM, navigate to the kernel source directory. While at the top, fire up gdb passing the uncompressed kernel binary `vmlinux` as an argument as such `sudo gdb vmlinux`. Now, on the client, force a sysrq like so `echo g > /proc/sysrq-trigger` which will drop the kernel to the debugger. For this to work, make sure that we are indeed configured to panic on oops like so:
+On the server VM, navigate to the kernel source directory. While at the top, fire up gdb passing the uncompressed kernel binary `vmlinux` as an argument as such `sudo gdb vmlinux`. Now, on the client, force a sysrq like so `echo g > /proc/sysrq-trigger` which will drop the kernel to the debugger. For this to work, write a 1 to this proc entry `/proc/sys/kernel/sysrq`. Additionally, make sure that we are indeed configured to panic on oops like so:
    ```
    sysctl kernel.panic_on_oops
    ```
@@ -47,7 +47,7 @@ If it gives a value of 0 change it to 1 like so `sudo sysctl kernel.panic_on_oop
 
 ![image](https://user-images.githubusercontent.com/46345560/230270093-0536505e-9462-4fb6-bd71-cd1596deee28.png)
 
-One easy way to disable the timeout is by adding `RuntimeWatchdogSec=0` to `/etc/systemd/system.conf` and rebooting the system. Assuming we've done all this we are now ready to start the debugging session. Since our master is already connected via the serial port and we've enabled serial console based debugging (via the `CONFIG_KGDB_SERIAL_CONSOLE` option), we can now ask the gdb instance on the master to connect to the serial port like so `target remote /dev/ttyS0`. Once connected, it will connect to the thread that fired the sysrq trigger. Issue the `backtrace` command to check the backtrace within that thread.
+If that happens, then your debugger might not get the input it needs so your debugging environment is no longer useful. One easy way to disable the timeout is by adding `RuntimeWatchdogSec=0` to `/etc/systemd/system.conf` and rebooting the system. Assuming we've done all this we are now ready to start the debugging session. Since our master is already connected via the serial port and we've enabled serial console based debugging (via the `CONFIG_KGDB_SERIAL_CONSOLE` option), we can now ask the gdb instance on the master to connect to the serial port like so `target remote /dev/ttyS0`. Once connected, it will connect to the thread that fired the sysrq trigger. Issue the `backtrace` command to check the backtrace within that thread.
 
 ```
 (gdb) target remote /dev/ttyS0
