@@ -32,7 +32,11 @@ The make the following changes to the options:
     KERNEL_ZSTD y -> n
     LOCALVERSION "" -> "Test"
    ```
-Start the build process like so `make -j ($nproc * 2) all` where `nproc` indicates the total number of cores as indicated by `nproc`. After a while it fails like so:
+Start the build process like so `make -j ($nproc * 2) all` where `nproc` indicates the total number of cores as indicated by `nproc`. If we plan on studying the kernel under the lens of a debugger later on and don't mind the extra size, then it's better to tell the compiler to include debugging options for use by the GDB debugger. This can be done using the `KCFLAGS` directive like so:
+   ```
+   make -j($nproc * 2) "KCFLAGS+= -ggdb" all
+   ```   
+After a while it fails like so:
    ```
    make[1]: *** No rule to make target 'debian/canonical-revoked-certs.pem', needed by 'certs/x509_revocation_list'.  Stop.
    make[1]: *** Waiting for unfinished jobs....
