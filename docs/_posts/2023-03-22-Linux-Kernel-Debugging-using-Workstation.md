@@ -82,4 +82,6 @@ kgdb_breakpoint () at kernel/debug/debug_core.c:1224
 #21 0x0000558115c00cb0 in ?? ()
 #22 0x0000000000000000 in ?? ()
 ```
-While the debugger has control, the debugee would be stalled. SSH connection(s) to the client will get disconnected after a while. We can now examine the backtrace as shown here or switch to another task of our interest. So this officially completes our rather quick and dirty introduction to Linux kernel debugging using windows workstation.
+While the debugger has control, the debugee would be stalled. SSH connection(s) to the client will get disconnected after a while. We can now examine the backtrace as shown here or switch to another task of our interest. Since we do not have symbols loaded for the userspace part of the stack, it shows up as `??` which is to be expected. Nonetheless, it is apparent that a syscall was made which actually caused the sysrq to be propagated to the handler.
+
+So this officially completes our rather quick and dirty introduction to Linux kernel debugging using windows workstation.
