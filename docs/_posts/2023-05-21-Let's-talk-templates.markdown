@@ -7,7 +7,7 @@ tags:
     - Templates
     - overloading
 ---
-Let's refresh our rather rusty C++ starting with one of the language's more commonly used feature, one which also differentiates it from good old C! Aptly named "templates", it is usually used for generating code on the fly. A rather typical scenario would include having a templatized version of a function which can then be used with different arguments. Since something like this is valid C++, it saves us a bunch of typing.
+Let's refresh our rather rusty C++ starting with one of the language's more commonly used feature; one which also differentiates it from good old C! Aptly named "templates", it is usually used for generating code on the fly. A rather typical scenario would include having a templatized version of a function which can then be used with different arguments. Since this (multiple functions with the same name having differing argument types) is valid C++, it saves us a bunch of typing.
 
 Without further ado, let's see how it looks!
 
@@ -38,7 +38,7 @@ int main() {
 }
 ```
 
-As can be seen, the keyword `template` defines a template function. There's no point to a template without a placeholder for a placeholder for a variable who's type will be determined at run-time. Which is what  `typename T` does. Once this placeholder has been defined, we can use it just like any other type. Since we're just getting (re)started with C++, let's keep it simple with just one type.<br/>
+As can be seen, the keyword `template` defines a template function. There's no point to a template without a placeholder who's type will be determined at run-time. This is exactly what the statement  `typename T` does. Once this placeholder has been defined, we can use it just like any other type. Since we're just getting (re)started with C++, let's keep it simple with just one type.<br/>
 
 Compiling this as is will give us a compile time error! gcc (v13) tell us that
 ```shell
@@ -60,7 +60,7 @@ In file included from /opt/compiler-explorer/gcc-13.1.0/include/c++/13.1.0/bits/
       |      ^~~~
 ```
 
-It appears the template library (a collection of powerful functions pre-defined for our use) already implements a swap function. Which is why our function here is not allowed. For it to make it work, we need to replace <s>swap</s> with _<b>S</b>wap_. Once done, it compiles and then we can use it with any kind of arguments (provided both a and b are interoperable).
+It appears the template library (a collection of powerful functions pre-defined for our use) already implements a swap function. Which is why our function here is not allowed (as conflict ensues, literally!). For it to work, we need to replace <s>swap</s> with _<b>S</b>wap_ (mind you C++, like C, is case sensitive). Once done, it compiles and then we can use it with any kind of arguments (provided both a and b are interoperable).
 
 Let's see how the resulting binary would look like when used with a good 'ol integer. Running `objdump` on it with the `-C` switch (for unmangling the decorated function names, which the g++ compiler does) we see this (partial output for brevity):
 ```asm
