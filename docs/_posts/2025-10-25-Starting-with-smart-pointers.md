@@ -181,6 +181,43 @@ auto p = std::shared_ptr<int[]>(new int[5]);
 ```
 That constructor has existed since C++17. It just doesn’t fold allocations, but it does handle cleanup correctly (delete[]).
 
+## std::weak_ptr - Non-owning observer
+As the name suggests, this pointer is 'weak', as in, it doesn't actually own the pointer in any way. It is sort of a lens through which one may observe a shared pointer. It can _only_ "watch" a shared pointer since unique_pointer has single ownership and as such has no reference count of its own. 
+
+It sort of, latches to an existing control block that has a reference count. A typical use case of this is to test if a shared pointer is still valid (refcnt > 0) and if it is, do something. One can even `.lock()` a weak pointer to obtain shared pointer (increases its ref cnt).
+
+Some of the things one could typically do with a weak_pointer is show here:
+```c++
+auto sp = std::make_shared<int>(42);
+std::weak_ptr<int> wp = sp;
+
+wp.expired();         // false
+auto p = wp.lock();   // p is shared_ptr<int>, non-null
+p.reset();            // drops that local owner; original sp still owns
+wp.expired();         // still false (sp alive)
+
+wp.reset();           // releases the weak reference (weak_count--), does NOT delete object
+
+sp.reset();           // now strong_count == 0 -> managed object destroyed
+// after this:
+wp.lock();            // returns nullptr
+```
+Important to note that `wp.expired` _can_ race (NOT thread safe) so it is not usually preferred when there are a lot of threads (highly parallel and dynamic environment when pointers get created and destroyed fast). A better strategy is to use `.lock` to obtain a shared pointer copy. This is thread safe and is a better alternative to testing using `expired`.
+
+Since `.lock`ing is relatively expensive, use atomic load and store with a shared pointer, with the writer atomically storing the pointer in a global location while readers atomically loading this into their local shared pointers. A short snippet that does this:
+```c++
+#include <atomic>
+std::shared_ptr<Foo> global_sp;
+
+// writer
+std::atomic_store(&global_sp, std::make_shared<Foo>());
+
+// reader
+auto snap = std::atomic_load(&global_sp);
+if (snap) snap->do_work();
+```
+All in all, the use case for a weak pointer seems pretty narrow. it should be used with much caution. One solid use case to use this is as part of a parent child relationship. Typically using shared callback pointers in both will lead to the parent being kept alive by the child and vice versa. Using a weak pointer for storing callback pointer relationship helps immensely here. Entities like listeners/observers are best stored as weak pointers.
+
 ## Visual Cheat Sheet
 ```
 make_shared<int>(42)        → [ctrl | int]
