@@ -181,6 +181,23 @@ auto p = std::shared_ptr<int[]>(new int[5]);
 ```
 That constructor has existed since C++17. It just doesn’t fold allocations, but it does handle cleanup correctly (delete[]).
 
+### Visual Cheat Sheet
+```
+make_shared<int>(42)        → [ctrl | int]
+make_shared<int[5]>()       → [ctrl | int[5]]      (C++20+)
+make_shared<int[]>(n)       → [ctrl | int[n]]      (C++20+)
+shared_ptr(new int[5])      → [ctrl] [int[5]]      (always OK)
+```
+
+### Runtime vs Compile-Time Roles
+As a recap, lets go over what happens at compile time vs run time. Deducing the type (of the object being shared), computing its size and layout happens at compile type whereas actual mem allocation, object construction and management of reference counts happen at run time.
+So, all work happens at runtime, but the recipe (layout and folding plan) must be complete at compile time. Incomplete or runtime-sized types break that plan.
+
+### One-Line Summary to Remember
+- make_shared = “single folded allocation → needs known size.”
+- shared_ptr(new …) = “two allocations → runtime size OK.”
+- C++20 finally teaches make_shared to handle arrays, but older libraries (like GCC 11.3) don’t implement that lesson yet.
+
 ## std::weak_ptr - Non-owning observer
 As the name suggests, this pointer is 'weak', as in, it doesn't actually own the pointer in any way. It is sort of a lens through which one may observe a shared pointer. It can _only_ "watch" a shared pointer since unique_pointer has single ownership and as such has no reference count of its own. 
 
@@ -217,21 +234,3 @@ auto snap = std::atomic_load(&global_sp);
 if (snap) snap->do_work();
 ```
 All in all, the use case for a weak pointer seems pretty narrow. it should be used with much caution. One solid use case to use this is as part of a parent child relationship. Typically using shared callback pointers in both will lead to the parent being kept alive by the child and vice versa. Using a weak pointer for storing callback pointer relationship helps immensely here. Entities like listeners/observers are best stored as weak pointers.
-
-## Visual Cheat Sheet
-```
-make_shared<int>(42)        → [ctrl | int]
-make_shared<int[5]>()       → [ctrl | int[5]]      (C++20+)
-make_shared<int[]>(n)       → [ctrl | int[n]]      (C++20+)
-shared_ptr(new int[5])      → [ctrl] [int[5]]      (always OK)
-```
-
-## Runtime vs Compile-Time Roles
-As a recap, lets go over what happens at compile time vs run time. Deducing the type (of the object being shared), computing its size and layout happens at compile type whereas actual mem allocation, object construction and management of reference counts happen at run time.
-So, all work happens at runtime, but the recipe (layout and folding plan) must be complete at compile time. Incomplete or runtime-sized types break that plan.
-
-
-## One-Line Summary to Remember
-- make_shared = “single folded allocation → needs known size.”
-- shared_ptr(new …) = “two allocations → runtime size OK.”
-- C++20 finally teaches make_shared to handle arrays, but older libraries (like GCC 11.3) don’t implement that lesson yet.
