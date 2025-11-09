@@ -170,7 +170,6 @@ These new overloads were standardized in C++20. The standards recommend checking
   #if __has_include(<version>)
     include <version>
   #endif
-#endif
 #include <memory>
 
 #if defined(__cpp_lib_shared_ptr_arrays) && __cpp_lib_shared_ptr_arrays >= 201707L
@@ -180,8 +179,7 @@ If this sounds like too much of a hassle, best to stick with
 auto p = std::shared_ptr<int[]>(new int[5]);
 ```
 That constructor has existed since C++17. It just doesn’t fold allocations, but it does handle cleanup correctly (delete[]).
-
-### Visual Cheat Sheet
+#### Visual Cheat Sheet
 ```
 make_shared<int>(42)        → [ctrl | int]
 make_shared<int[5]>()       → [ctrl | int[5]]      (C++20+)
@@ -189,11 +187,12 @@ make_shared<int[]>(n)       → [ctrl | int[n]]      (C++20+)
 shared_ptr(new int[5])      → [ctrl] [int[5]]      (always OK)
 ```
 
-### Runtime vs Compile-Time Roles
+#### Runtime vs Compile-Time Roles
 As a recap, lets go over what happens at compile time vs run time. Deducing the type (of the object being shared), computing its size and layout happens at compile type whereas actual mem allocation, object construction and management of reference counts happen at run time.
 So, all work happens at runtime, but the recipe (layout and folding plan) must be complete at compile time. Incomplete or runtime-sized types break that plan.
 
-### One-Line Summary to Remember
+
+#### One-Line Summary to Remember
 - make_shared = “single folded allocation → needs known size.”
 - shared_ptr(new …) = “two allocations → runtime size OK.”
 - C++20 finally teaches make_shared to handle arrays, but older libraries (like GCC 11.3) don’t implement that lesson yet.
@@ -234,3 +233,68 @@ auto snap = std::atomic_load(&global_sp);
 if (snap) snap->do_work();
 ```
 All in all, the use case for a weak pointer seems pretty narrow. it should be used with much caution. One solid use case to use this is as part of a parent child relationship. Typically using shared callback pointers in both will lead to the parent being kept alive by the child and vice versa. Using a weak pointer for storing callback pointer relationship helps immensely here. Entities like listeners/observers are best stored as weak pointers.
+
+## Section 07 Walkthroughs from Complete Modern C++
+
+To keep things grounded, here are concrete examples from [repo](https://github.com/redbilledpanda/Complete-Modern-C-Plus-Plus-11-14-17/blob/moveToCMake_Linux/) that inspired this post. This is a modified version of the original [repo](https://github.com/PacktPublishing/Complete-Modern-C-Plus-Plus-11-14-17) that is based off of legacy Visual Studio and uses a windows toolchain. I've adapted it to use CMake on Linux and tweaked some files to better bring out some concepts where I see fit.
+
+### unique_ptr: streaming ownership through helper functions
+[Source.cpp](https://github.com/redbilledpanda/Complete-Modern-C-Plus-Plus-11-14-17/blob/moveToCMake_Linux/Section%2007/unique_ptr/unique_ptr/Source.cpp) wires a `std::unique_ptr<Integer>` through helper functions to make ownership obvious and exception-safe:
+
+```c++
+std::unique_ptr<Integer> GetPointer(int value) {
+    return std::make_unique<Integer>(value);
+}
+
+void Operate(int value) {
+    auto p = GetPointer(value);
+    p->SetValue(100);
+    Display(p.get());
+    Store(p);
+}
+```
+Because only `Operate` receives the pointer returned from `GetPointer`, ownership never leaks and `Store` only observes via a reference. Notice the explicit `p.get()` when passing a raw pointer to `Display`—a good reminder that unique owners sometimes need to hand out temporary, non-owning views.  
+
+### shared_ptr: many employees, one project
+This [source.cpp](https://github.com/redbilledpanda/Complete-Modern-C-Plus-Plus-11-14-17/blob/moveToCMake_Linux/Section%2007/shared_ptr/shared_ptr/Source.cpp) models three `Employee` objects sharing the same `Project` instance:
+
+```c++
+int main() {
+    auto prj = std::make_shared<Project>();
+    prj->SetName("Video Decoder");
+
+    auto e1 = std::make_shared<Employee>();
+    e1->SetProject(prj);
+    auto e2 = std::make_shared<Employee>();
+    e2->SetProject(prj);
+    auto e3 = std::make_shared<Employee>();
+    e3->SetProject(prj);
+
+    std::cout << "Reference count:" << prj.use_count() << '\n';
+}
+```
+
+Every `Employee` just keeps another `shared_ptr<Project>`, so when the last employee releases the project, the control block’s strong count hits zero and the project is destroyed. Calling `use_count()` right before handing the pointer into helper functions is a nice way to explain what “shared ownership” actually means.  
+
+### weak_ptr: observing without owning
+Lastly, this [source.cpp](https://github.com/redbilledpanda/Complete-Modern-C-Plus-Plus-11-14-17/blob/moveToCMake_Linux/Section%2007/weak_ptr/weak_ptr/Source.cpp) wraps the observer pattern in a `Printer` class that stores a `std::weak_ptr<int>` and locks it only when needed:
+```c++
+class Printer {
+    std::weak_ptr<int> m_pValue{};
+public:
+    void SetObserver(const std::shared_ptr<int>& p) {
+        m_pValue = p;
+    }
+    void Print(const std::string& label = "") const {
+        if (auto sp = m_pValue.lock()) {
+            std::cout << "Value: " << *sp << "\n";
+        } else {
+            std::cout << "Status: Expired\n";
+        }
+    }
+};
+```
+`main()` in the same file walks through all three overloads and demonstrates when each is ideal:
+- Call `SetObserver(const std::shared_ptr<int>&)` when the caller already has a `shared_ptr`; it converts to `weak_ptr` without an extra temporary.
+- Call `SetObserver(const std::weak_ptr<int>&)` when you already expose a `weak_ptr` and want zero copies.
+- Call `SetObserverByValue(std::weak_ptr<int>)` when you intentionally want to pass ownership of the observer slot (e.g., move from a temporary or keep a local copy).
