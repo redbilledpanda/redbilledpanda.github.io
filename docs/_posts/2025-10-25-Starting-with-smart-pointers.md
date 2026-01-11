@@ -5,7 +5,7 @@ date:   2025-10-25 16:42:48 +0530
 tags:
    - C++
    - c++
-   - "smart pointers"
+   - smart_pointers
    - shared_ptr
    - unique_ptr
    - weak_ptr
